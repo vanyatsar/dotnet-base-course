@@ -8,9 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="HelloLibrary">
-      <HintPath>..\HelloLibrary.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\HelloLibrary\HelloLibrary.csproj" />
   </ItemGroup>
 
 </Project>
