@@ -1,6 +1,4 @@
-﻿using System.Drawing;
-
-namespace Task1
+﻿namespace Task1
 {
     public class Product
     {
