@@ -12,7 +12,7 @@ namespace Task1.Tests
         {
             int[] numbers = new[] { 4, 2, 1, 3, -5 };
 
-            Utilities.Sort(numbers);
+            numbers.Sort();
 
             CollectionAssert.AreEqual(new[] { -5, 1, 2, 3, 4 }, numbers);
         }
@@ -43,7 +43,6 @@ namespace Task1.Tests
                 new Product("Product 3", 30.0d),
             };
             var productToFind = new Product("Product 3", 30.0d);
-
             int index = Utilities.IndexOf(products, product => product.Equals(productToFind));
 
             Assert.That(index, Is.EqualTo(2));
