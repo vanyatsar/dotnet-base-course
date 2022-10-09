@@ -12,7 +12,7 @@ namespace Task1.Tests
         {
             int[] numbers = new[] { 4, 2, 1, 3, -5 };
 
-            numbers.Sort();
+            Utilities.Sort(numbers);
 
             CollectionAssert.AreEqual(new[] { -5, 1, 2, 3, 4 }, numbers);
         }

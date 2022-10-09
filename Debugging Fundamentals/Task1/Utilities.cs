@@ -8,7 +8,7 @@ namespace Task1
         /// Sorts an array in ascending order using bubble sort.
         /// </summary>
         /// <param name="numbers">Numbers to sort.</param>
-        public static void Sort(this int[] numbers)
+        public static void Sort( int[] numbers)
         {
             if (numbers == null)
             {
