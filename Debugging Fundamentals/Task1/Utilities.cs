@@ -48,7 +48,6 @@ namespace Task1
             for (int i = 0; i <= products.Length - 1; i++)
             {
                 var product = products[i];
-                var status = predicate(product);
                 if (predicate(product))
                 {
                     return i;
