@@ -3,11 +3,16 @@ using System.Linq;
 
 namespace FileSystemVisitor
 {
-    public class Filter
+    public static class Filter
     {
-        public List<string> FilterByName(List<string> files, string filterName)
+        public static List<string> FilterByName(List<string> files, string filterValue)
         {
-            return files.Where(f => f.Contains(filterName)).ToList();
+            return files.Where(f => f.Contains(filterValue)).ToList();
+        }
+
+        public static List<string> NoFilter(List<string> files, string filterValue)
+        {
+            return files;
         }
     }
 }

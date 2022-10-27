@@ -7,47 +7,40 @@ namespace FileSystemVisitor
 {
     public class FileSystemVisitor
     {
+        public delegate List<string> FilterAction(List<string> arg1, string arg2);
+
         private string rootDirectory = @"C:\Users\Ivan_Tsar";
-
-        private Filter Filter => new Filter();
-
-        private delegate List<string> FilterAction(List<string> arg1, string arg2);
-
-        private readonly FilterAction filterAction;
+        private FilterAction? filterAction;
+        private readonly string filteringValue;
 
         public FileSystemVisitor()
         {
             IsDirectoryExists(rootDirectory);
         }
 
-        public FileSystemVisitor(string rootDirectory, FilterOption filterOption)
+        public FileSystemVisitor(string rootDirectory, FilterAction filterAction, string filteringValue = "")
         {
             IsDirectoryExists(rootDirectory);
             this.rootDirectory = rootDirectory;
-
-            switch (filterOption)
-            {
-                case FilterOption.FileName:
-                    filterAction = Filter.FilterByName;
-                    break;
-                case FilterOption.NumberOfNameSymbols:   
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        public FileSystemVisitor(string rootDirectory)
-        {
-            IsDirectoryExists(rootDirectory);
-            this.rootDirectory = rootDirectory;
+            this.filteringValue = filteringValue;
+            this.filterAction = filterAction;
         }
 
         public string GetRootDirectory() => rootDirectory;
 
-        public List<string> ExecuteFiltering(IEnumerable<string> files, string filterName)
+        public List<string> ExecuteFiltering(IEnumerable<string> files)
         {
-            return filterAction(files.ToList(), filterName);
+            return filterAction?.Invoke(files.ToList(), filteringValue);
+        }
+
+        private FilterAction SelectFilteringOption(FilterOption filterOption)
+        {
+            switch (filterOption)
+            {
+                case FilterOption.FileName: return Filter.FilterByName;
+                case FilterOption.NoFilter: return Filter.NoFilter;
+                default: return Filter.NoFilter;
+            }
         }
 
         public string SearchFile(string fileName, string sDir) => GetAllFilesFromDirectory(sDir).Any(f => f.Contains(fileName))
@@ -59,7 +52,7 @@ namespace FileSystemVisitor
 
         public IEnumerable<string> GetAllFoldersFromDirectory(string sDir)
         {
-            foreach (var dir in Directory.GetDirectories(sDir))
+            foreach (var dir in ExecuteFiltering(Directory.GetDirectories(sDir)))
             {
                 yield return dir;
             }
@@ -75,7 +68,7 @@ namespace FileSystemVisitor
 
         public IEnumerable<string> GetAllFilesFromDirectory(string sDir)
         {
-            foreach (var file in Directory.GetFiles(sDir))
+            foreach (var file in ExecuteFiltering(Directory.GetFiles(sDir)))
             {
                 yield return file;
             }

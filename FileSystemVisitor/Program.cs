@@ -8,16 +8,10 @@ namespace FileSystemVisitor
         const string root = @"C:\Users\Ivan_Tsar\Downloads\магистратура";
         static void Main(string[] args)
         {
-            var fileVisitor = new FileSystemVisitor(root, FilterOption.FileName);
-            var files = fileVisitor.GetAllFilesFromDirectory(root);
-            fileVisitor.DisplayAllFilesInSubFolders(root);
+            var fileVisitor = new FileSystemVisitor(root, Filter.NoFilter);
+            fileVisitor.DisplayAllSubFolders(root);
             Console.WriteLine();
-            var filtered = fileVisitor.ExecuteFiltering(files, ".doc");
-
-            foreach (var item in filtered)
-            {
-                Console.WriteLine(item);
-            }
+            fileVisitor.DisplayAllFilesInSubFolders(root);
         }
     }
 }
