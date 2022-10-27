@@ -1,19 +1,22 @@
 ﻿using System;
+using System.Linq;
 
 namespace FileSystemVisitor
 {
     internal class Program
     {
-        const string root = @"C:\Users\Ivan_Tsar\Downloads";
+        const string root = @"C:\Users\Ivan_Tsar\Downloads\магистратура";
         static void Main(string[] args)
         {
-            var fileVisitor = new FileSystemVisitor();
-            var files = fileVisitor.GetAllFoldersFromDirectory(root);
+            var fileVisitor = new FileSystemVisitor(root, FilterOption.FileName);
+            var files = fileVisitor.GetAllFilesFromDirectory(root);
+            fileVisitor.DisplayAllFilesInSubFolders(root);
+            Console.WriteLine();
+            var filtered = fileVisitor.ExecuteFiltering(files, ".doc");
 
-            Console.WriteLine("List of Files");
-            foreach (var file in files)
+            foreach (var item in filtered)
             {
-                Console.WriteLine("{0}", file);
+                Console.WriteLine(item);
             }
         }
     }

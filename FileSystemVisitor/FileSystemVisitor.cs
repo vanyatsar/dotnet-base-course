@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace FileSystemVisitor
 {
@@ -7,9 +9,32 @@ namespace FileSystemVisitor
     {
         private string rootDirectory = @"C:\Users\Ivan_Tsar";
 
+        private Filter Filter => new Filter();
+
+        private delegate List<string> FilterAction(List<string> arg1, string arg2);
+
+        private readonly FilterAction filterAction;
+
         public FileSystemVisitor()
         {
             IsDirectoryExists(rootDirectory);
+        }
+
+        public FileSystemVisitor(string rootDirectory, FilterOption filterOption)
+        {
+            IsDirectoryExists(rootDirectory);
+            this.rootDirectory = rootDirectory;
+
+            switch (filterOption)
+            {
+                case FilterOption.FileName:
+                    filterAction = Filter.FilterByName;
+                    break;
+                case FilterOption.NumberOfNameSymbols:   
+                    break;
+                default:
+                    break;
+            }
         }
 
         public FileSystemVisitor(string rootDirectory)
@@ -20,6 +45,18 @@ namespace FileSystemVisitor
 
         public string GetRootDirectory() => rootDirectory;
 
+        public List<string> ExecuteFiltering(IEnumerable<string> files, string filterName)
+        {
+            return filterAction(files.ToList(), filterName);
+        }
+
+        public string SearchFile(string fileName, string sDir) => GetAllFilesFromDirectory(sDir).Any(f => f.Contains(fileName))
+            ? GetAllFilesFromDirectory(sDir).First(file => file.Contains(fileName))
+            : $"File {fileName} was not found.";
+
+        public void DisplayAllSubFolders(string dir) => GetAllFoldersFromDirectory(dir).ToList().ForEach(file => Console.WriteLine(file));
+        public void DisplayAllFilesInSubFolders(string dir) => GetAllFilesFromDirectory(dir).ToList().ForEach(file => Console.WriteLine(file));
+
         public IEnumerable<string> GetAllFoldersFromDirectory(string sDir)
         {
             foreach (var dir in Directory.GetDirectories(sDir))
@@ -29,7 +66,7 @@ namespace FileSystemVisitor
 
             foreach (var directory in Directory.GetDirectories(sDir))
             {
-                foreach (var dir in GetAllFilesFromDirectory(directory))
+                foreach (var dir in GetAllFoldersFromDirectory(directory))
                 {
                     yield return dir;
                 }
