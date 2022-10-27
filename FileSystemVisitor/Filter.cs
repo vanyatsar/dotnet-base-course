@@ -7,12 +7,7 @@ namespace FileSystemVisitor
     {
         public static List<string> FilterByName(List<string> files, string filterValue)
         {
-            return files.Where(f => f.Contains(filterValue)).ToList();
-        }
-
-        public static List<string> NoFilter(List<string> files, string filterValue)
-        {
-            return files;
+            return files.FindAll(f => f.Contains(filterValue)).ToList();
         }
     }
 }
