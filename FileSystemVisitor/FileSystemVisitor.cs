@@ -44,6 +44,11 @@ namespace FileSystemVisitor
                 eventArgs.CancelRequested = true;
             });
 
+            FileSearcher.FileNotFound += new EventHandler<FileNotFoundArgs>((sender, eventArgs) =>
+            {
+                Console.WriteLine("File was not found.");
+            });
+
             FileSearcher.Search(fileName, GetAllFilesFromDirectory(sDir));
         }
 
