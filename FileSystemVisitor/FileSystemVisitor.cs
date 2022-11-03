@@ -8,20 +8,20 @@ namespace FileSystemVisitor
     public class FileSystemVisitor
     {
         public delegate List<string> FilterAction(List<string> arg1, string arg2);
-        public delegate void FoundItemsHandler(string message);
 
         private string rootDirectory = @"C:\Users\Ivan_Tsar";
-        private event FoundItemsHandler? Notify;
 
         private FilterAction? filterAction;
+
         private readonly string filteringValue;
+
+        public FileSearcher FileSearcher { get; private set; } = new FileSearcher();
 
         public FileSystemVisitor(string rootDirectory)
         {
             filteringValue = string.Empty;
             IsDirectoryExists(rootDirectory);
             this.rootDirectory = rootDirectory;
-            Notify += DisplayMessage;
         }
 
         public FileSystemVisitor(string rootDirectory, FilterAction filterAction, string filteringValue = "")
@@ -30,48 +30,48 @@ namespace FileSystemVisitor
             this.rootDirectory = rootDirectory;
             this.filteringValue = filteringValue;
             this.filterAction = filterAction;
-            Notify += DisplayMessage;
         }
 
         public string GetRootDirectory() => rootDirectory;
 
         public List<string> ExecuteFiltering(IEnumerable<string> files) => filterAction?.Invoke(files.ToList(), filteringValue);
 
-        public string SearchFile(string fileName, string sDir) => GetAllFilesFromDirectory(sDir).Any(f => f.Contains(fileName))
-            ? GetAllFilesFromDirectory(sDir).First(file => file.Contains(fileName))
-            : $"File {fileName} was not found.";
+        public void SearchFile(string fileName, string sDir)
+        {
+            FileSearcher.FileFound += new EventHandler<FileFoundArgs>((sender, eventArgs) =>
+            {
+                Console.WriteLine(eventArgs.FoundFile);
+                eventArgs.CancelRequested = true;
+            });
+
+            FileSearcher.Search(fileName, GetAllFilesFromDirectory(sDir));
+        }
 
         public void DisplayAllSubFolders(string dir)
         {
-            Notify?.Invoke("Start searching...");
-
             var foldersList = GetAllFoldersFromDirectory(dir).ToList();
             if (filteringValue.Equals(string.Empty))
             {
-                foldersList.ForEach(folder => Notify?.Invoke($"{folder} found."));
+                foldersList.ForEach(folder => Console.WriteLine($"{folder} found."));
             }
             else
             {
-                foldersList.ForEach(folder => Notify?.Invoke($"Filtered {folder} found."));
+                foldersList.ForEach(folder => Console.WriteLine($"Filtered {folder} found."));
             }
 
-            Notify?.Invoke($"Finish searching...\nFound {foldersList.Count} folders total.");
         }
 
         public void DisplayAllFilesInSubFolders(string dir)
         {
-            Notify?.Invoke("Start searching...");
             var filesList = GetAllFilesFromDirectory(dir).ToList();
-            if (filteringValue.Equals(String.Empty))
+            if (filteringValue.Equals(string.Empty))
             {
-                filesList.ForEach(file => Notify?.Invoke($"{file} found."));
+                filesList.ForEach(file => Console.WriteLine($"{file} found."));
             }
             else
             {
-                filesList.ForEach(file => Notify?.Invoke($"Filtered {file} found."));
+                filesList.ForEach(file => Console.WriteLine($"Filtered {file} found."));
             }
-
-            Notify?.Invoke($"Finish searching...\nFound {filesList.Count} files total.");
         }
 
         public IEnumerable<string> GetAllFoldersFromDirectory(string sDir)
@@ -137,8 +137,6 @@ namespace FileSystemVisitor
                 default: return Filter.FilterByName;
             }
         }
-
-        private void DisplayMessage(string message) => Console.WriteLine(message);
 
         private bool IsDirectoryExists(string dir)
         {
