@@ -8,36 +8,45 @@ namespace FileSystemVisitor
     public class FileSystemVisitor
     {
         public delegate List<string> FilterAction(List<string> arg1, string arg2);
-
-        private string rootDirectory = @"C:\Users\Ivan_Tsar";
-
-        private FilterAction? filterAction;
-
+        public delegate void DisplayMessageAction(string message);
+        private readonly string rootDirectory = @"C:\Users\Ivan_Tsar\Downloads\Test directory";
         private readonly string filteringValue;
+        private FilterAction? filterAction;
+        private event DisplayMessageAction MessageDisplayed;
+        private FilterOption? filterOption;
 
         public FileSearcher FileSearcher { get; private set; } = new FileSearcher();
 
         public FileSystemVisitor(string rootDirectory)
         {
             filteringValue = string.Empty;
+            filterOption = FilterOption.NoFilter;
             IsDirectoryExists(rootDirectory);
             this.rootDirectory = rootDirectory;
+            
         }
 
-        public FileSystemVisitor(string rootDirectory, FilterAction filterAction, string filteringValue = "")
+        public FileSystemVisitor(string rootDirectory, FilterAction filterAction, FilterOption filterOption, string filteringValue = "")
         {
             IsDirectoryExists(rootDirectory);
             this.rootDirectory = rootDirectory;
             this.filteringValue = filteringValue;
             this.filterAction = filterAction;
+            this.filterOption = filterOption;
         }
 
         public string GetRootDirectory() => rootDirectory;
 
-        public List<string> ExecuteFiltering(IEnumerable<string> files) => filterAction?.Invoke(files.ToList(), filteringValue);
+        public List<string> ExecuteFiltering(IEnumerable<string> files)
+        {
+            return filterAction?.Invoke(files.ToList(), filteringValue);
+        }
 
         public void SearchFile(string fileName, string sDir)
         {
+            MessageDisplayed += DisplayMessage;
+
+            MessageDisplayed?.Invoke("Start searching");
             FileSearcher.FileFound += new EventHandler<FileFoundArgs>((sender, eventArgs) =>
             {
                 Console.WriteLine(eventArgs.FoundFile);
@@ -50,53 +59,57 @@ namespace FileSystemVisitor
             });
 
             FileSearcher.Search(fileName, GetAllFilesFromDirectory(sDir));
+            MessageDisplayed?.Invoke("Search was finished");
+
+            MessageDisplayed -= DisplayMessage;
         }
 
         public void DisplayAllSubFolders(string dir)
         {
+            MessageDisplayed += DisplayMessage;
+
             var foldersList = GetAllFoldersFromDirectory(dir).ToList();
-            if (filteringValue.Equals(string.Empty))
+            if (filterOption == FilterOption.NoFilter || filterOption == FilterOption.FileName)
             {
-                foldersList.ForEach(folder => Console.WriteLine($"{folder} found."));
+                foldersList.ForEach(folder => MessageDisplayed?.Invoke($"{folder} found."));
             }
             else
             {
-                foldersList.ForEach(folder => Console.WriteLine($"Filtered {folder} found."));
+                ExecuteFiltering(foldersList).ForEach(folder => MessageDisplayed?.Invoke($"Filtered {folder} found."));
             }
 
+            MessageDisplayed -= DisplayMessage;
         }
 
-        public void DisplayAllFilesInSubFolders(string dir)
+        public void DisplayAllFilesInSubFolders(string dir, bool exclude = false, string filesToExclude = "")
         {
+            MessageDisplayed += DisplayMessage;
             var filesList = GetAllFilesFromDirectory(dir).ToList();
-            if (filteringValue.Equals(string.Empty))
+
+            if (filterOption == FilterOption.FolderName || filterOption == FilterOption.NoFilter)
             {
-                filesList.ForEach(file => Console.WriteLine($"{file} found."));
+                filesList.ForEach(file => MessageDisplayed?.Invoke($"{file} found."));
             }
             else
             {
-                filesList.ForEach(file => Console.WriteLine($"Filtered {file} found."));
+                ExecuteFiltering(filesList).ForEach(file => MessageDisplayed?.Invoke($"Filtered {file} found."));
             }
+
+            if (exclude)
+            {
+                filesList.RemoveAll(f => f.Equals(filesToExclude));
+            }
+
+            MessageDisplayed -= DisplayMessage;
         }
 
         public IEnumerable<string> GetAllFoldersFromDirectory(string sDir)
         {
-
-            if (filteringValue == "")
+            foreach (var dir in Directory.GetDirectories(sDir))
             {
-                foreach (var dir in Directory.GetDirectories(sDir))
-                {
-                    yield return dir;
-                }
+                yield return dir;
             }
-            else
-            {
-                foreach (var dir in ExecuteFiltering(Directory.GetDirectories(sDir)))
-                {
-                    yield return dir;
-                }
-            }
-
+            
             foreach (var directory in Directory.GetDirectories(sDir))
             {
                 foreach (var dir in GetAllFoldersFromDirectory(directory))
@@ -108,19 +121,9 @@ namespace FileSystemVisitor
 
         public IEnumerable<string> GetAllFilesFromDirectory(string sDir)
         {
-            if (filteringValue == "")
+            foreach (var file in Directory.GetFiles(sDir))
             {
-                foreach (var file in Directory.GetFiles(sDir))
-                {
-                    yield return file;
-                }
-            }
-            else
-            {
-                foreach (var file in ExecuteFiltering(Directory.GetFiles(sDir)))
-                {
-                    yield return file;
-                }
+                yield return Path.GetFileName(file);
             }
 
             foreach (var directory in Directory.GetDirectories(sDir))
@@ -133,6 +136,8 @@ namespace FileSystemVisitor
         }
 
         #region Private
+
+        private void DisplayMessage(string message) => Console.WriteLine(message);
 
         private FilterAction SelectFilteringOption(FilterOption filterOption)
         {

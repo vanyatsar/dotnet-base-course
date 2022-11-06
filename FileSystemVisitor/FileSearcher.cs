@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace FileSystemVisitor
@@ -27,7 +26,7 @@ namespace FileSystemVisitor
             if (args == null)
             {
                 RaiseFileNotFound(true);
-            }   
+            } 
         }
 
         private FileFoundArgs RaiseFileFound(string file)

@@ -3,7 +3,7 @@
     public enum FilterOption
     {
         FileName,
-        NumberOfNameSymbols,
+        FolderName,
         NoFilter
     }
 }
