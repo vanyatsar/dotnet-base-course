@@ -2,54 +2,46 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using FileSystemVisitor.EventArguments;
+using FileSystemVisitor.FileUtilities;
 
 namespace FileSystemVisitor
 {
     public class FileSystemVisitor
     {
-        public delegate List<string> FilterAction(List<string> arg1, string arg2);
-        public delegate void DisplayMessageAction(string message);
         private readonly string rootDirectory = @"C:\Users\Ivan_Tsar\Downloads\Test directory";
-        private readonly string filteringValue;
-        private FilterAction? filterAction;
-        private event DisplayMessageAction MessageDisplayed;
-        private FilterOption? filterOption;
+        private readonly string filterValue;
+        private readonly FilterAction filterAction;
+
+        public delegate List<string> FilterAction(List<string> collection, string filterValue);
+        public event EventHandler<NewMessageEventArgs> OnStart;
+        public event EventHandler<NewMessageEventArgs> OnFinish;
 
         public FileSearcher FileSearcher { get; private set; } = new FileSearcher();
 
-        public FileSystemVisitor(string rootDirectory)
-        {
-            filteringValue = string.Empty;
-            filterOption = FilterOption.NoFilter;
-            IsDirectoryExists(rootDirectory);
-            this.rootDirectory = rootDirectory;
-            
-        }
-
-        public FileSystemVisitor(string rootDirectory, FilterAction filterAction, FilterOption filterOption, string filteringValue = "")
+        public FileSystemVisitor(string rootDirectory, FilterAction filterAction, string filterValue = "")
         {
             IsDirectoryExists(rootDirectory);
             this.rootDirectory = rootDirectory;
-            this.filteringValue = filteringValue;
+            this.filterValue = filterValue;
             this.filterAction = filterAction;
-            this.filterOption = filterOption;
         }
 
         public string GetRootDirectory() => rootDirectory;
 
         public List<string> ExecuteFiltering(IEnumerable<string> files)
         {
-            return filterAction?.Invoke(files.ToList(), filteringValue);
+            return filterAction?.Invoke(files.ToList(), filterValue);
         }
 
         public void SearchFile(string fileName, string sDir)
         {
-            MessageDisplayed += DisplayMessage;
+            OnStartMessage("\nSearch was started.");
 
-            MessageDisplayed?.Invoke("Start searching");
             FileSearcher.FileFound += new EventHandler<FileFoundArgs>((sender, eventArgs) =>
             {
-                Console.WriteLine(eventArgs.FoundFile);
+                Console.WriteLine("Found file is: {0}", eventArgs.FoundFile);
                 eventArgs.CancelRequested = true;
             });
 
@@ -59,48 +51,8 @@ namespace FileSystemVisitor
             });
 
             FileSearcher.Search(fileName, GetAllFilesFromDirectory(sDir));
-            MessageDisplayed?.Invoke("Search was finished");
 
-            MessageDisplayed -= DisplayMessage;
-        }
-
-        public void DisplayAllSubFolders(string dir)
-        {
-            MessageDisplayed += DisplayMessage;
-
-            var foldersList = GetAllFoldersFromDirectory(dir).ToList();
-            if (filterOption == FilterOption.NoFilter || filterOption == FilterOption.FileName)
-            {
-                foldersList.ForEach(folder => MessageDisplayed?.Invoke($"{folder} found."));
-            }
-            else
-            {
-                ExecuteFiltering(foldersList).ForEach(folder => MessageDisplayed?.Invoke($"Filtered {folder} found."));
-            }
-
-            MessageDisplayed -= DisplayMessage;
-        }
-
-        public void DisplayAllFilesInSubFolders(string dir, bool exclude = false, string filesToExclude = "")
-        {
-            MessageDisplayed += DisplayMessage;
-            var filesList = GetAllFilesFromDirectory(dir).ToList();
-
-            if (filterOption == FilterOption.FolderName || filterOption == FilterOption.NoFilter)
-            {
-                filesList.ForEach(file => MessageDisplayed?.Invoke($"{file} found."));
-            }
-            else
-            {
-                ExecuteFiltering(filesList).ForEach(file => MessageDisplayed?.Invoke($"Filtered {file} found."));
-            }
-
-            if (exclude)
-            {
-                filesList.RemoveAll(f => f.Equals(filesToExclude));
-            }
-
-            MessageDisplayed -= DisplayMessage;
+            OnFinishMessage("Search was finished.\n");
         }
 
         public IEnumerable<string> GetAllFoldersFromDirectory(string sDir)
@@ -137,15 +89,20 @@ namespace FileSystemVisitor
 
         #region Private
 
-        private void DisplayMessage(string message) => Console.WriteLine(message);
-
-        private FilterAction SelectFilteringOption(FilterOption filterOption)
+        private void OnStartMessage(string message)
         {
-            switch (filterOption)
-            {
-                case FilterOption.FileName: return Filter.FilterByName;
-                default: return Filter.FilterByName;
-            }
+            NewMessageEventArgs e = new NewMessageEventArgs(message);
+            EventHandler<NewMessageEventArgs> temp = Volatile.Read(ref OnStart);
+
+            temp?.Invoke(this, e);
+        }
+
+        private void OnFinishMessage(string message)
+        {
+            NewMessageEventArgs e = new NewMessageEventArgs(message);
+            EventHandler<NewMessageEventArgs> temp = Volatile.Read(ref OnFinish);
+
+            temp?.Invoke(this, e);
         }
 
         private bool IsDirectoryExists(string dir)

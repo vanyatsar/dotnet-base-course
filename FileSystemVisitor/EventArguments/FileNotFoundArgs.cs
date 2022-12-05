@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FileSystemVisitor
+namespace FileSystemVisitor.EventArguments
 {
     public class FileNotFoundArgs : EventArgs
     {

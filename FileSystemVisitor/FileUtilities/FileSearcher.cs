@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using FileSystemVisitor.EventArguments;
 
-namespace FileSystemVisitor
+namespace FileSystemVisitor.FileUtilities
 {
     public class FileSearcher
     {
@@ -22,11 +23,11 @@ namespace FileSystemVisitor
                     }
                 }
             }
-            
+
             if (args == null)
             {
                 RaiseFileNotFound(true);
-            } 
+            }
         }
 
         private FileFoundArgs RaiseFileFound(string file)
